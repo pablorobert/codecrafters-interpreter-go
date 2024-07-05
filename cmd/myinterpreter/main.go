@@ -56,6 +56,10 @@ func scanToken(input string) Token {
 		token = Token{posToken, "LEFT_PAREN", "(", nil}
 	case c == ")":
 		token = Token{posToken, "RIGHT_PAREN", ")", nil}
+	case c == "{":
+		token = Token{posToken, "LEFT_BRACE", "{", nil}
+	case c == "}":
+		token = Token{posToken, "RIGHT_BRACE", "}", nil}
 	default:
 		token = Token{posToken, "EOF", "", nil}
 	}
