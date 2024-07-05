@@ -76,6 +76,14 @@ func scanToken(input string) (Token, error) {
 			posToken++
 		}
 		return token, nil
+	case c == "!":
+		token := Token{posToken, "BANG", "!", nil}
+		next := peek(input)
+		if next == "=" {
+			token = Token{posToken, "BANG_EQUAL", "!=", nil}
+			posToken++
+		}
+		return token, nil
 	case c == ")":
 		return Token{posToken, "RIGHT_PAREN", ")", nil}, nil
 	case c == "{":
