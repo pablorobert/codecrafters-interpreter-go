@@ -60,6 +60,18 @@ func scanToken(input string) Token {
 		token = Token{posToken, "LEFT_BRACE", "{", nil}
 	case c == "}":
 		token = Token{posToken, "RIGHT_BRACE", "}", nil}
+	case c == "*":
+		token = Token{posToken, "STAR", "*", nil}
+	case c == ".":
+		token = Token{posToken, "DOT", ".", nil}
+	case c == ",":
+		token = Token{posToken, "COMMA", ",", nil}
+	case c == ";":
+		token = Token{posToken, "SEMICOLON", ";", nil}
+	case c == "+":
+		token = Token{posToken, "PLUS", "+", nil}
+	case c == "-":
+		token = Token{posToken, "MINUS", "-", nil}
 	default:
 		token = Token{posToken, "EOF", "", nil}
 	}
