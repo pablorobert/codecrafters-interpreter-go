@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
@@ -13,10 +14,14 @@ type Token struct {
 }
 
 var posToken int
+var line int
 var tokens []Token
+var hasError bool
 
 func main() {
 	posToken = -1
+	line = 1
+	hasError = false
 
 	if len(os.Args) < 3 {
 		fmt.Fprintln(os.Stderr, "Usage: ./your_program.sh tokenize <filename>")
@@ -38,7 +43,12 @@ func main() {
 	}
 
 	for posToken < len(fileContents)-1 {
-		tokens = append(tokens, scanToken(string(fileContents)))
+		newToken, err := scanToken(string(fileContents))
+		if err != nil {
+			hasError = true
+		} else {
+			tokens = append(tokens, newToken)
+		}
 	}
 	token := Token{posToken, "EOF", "", nil}
 	tokens = append(tokens, token)
@@ -46,36 +56,40 @@ func main() {
 	for token := range tokens {
 		printToken(tokens[token])
 	}
+
+	if hasError {
+		os.Exit(65)
+	}
 }
 
-func scanToken(input string) Token {
-	var token Token
+func scanToken(input string) (Token, error) {
+	//var token Token
 	c := advance(input)
 	switch {
 	case c == "(":
-		token = Token{posToken, "LEFT_PAREN", "(", nil}
+		return Token{posToken, "LEFT_PAREN", "(", nil}, nil
 	case c == ")":
-		token = Token{posToken, "RIGHT_PAREN", ")", nil}
+		return Token{posToken, "RIGHT_PAREN", ")", nil}, nil
 	case c == "{":
-		token = Token{posToken, "LEFT_BRACE", "{", nil}
+		return Token{posToken, "LEFT_BRACE", "{", nil}, nil
 	case c == "}":
-		token = Token{posToken, "RIGHT_BRACE", "}", nil}
+		return Token{posToken, "RIGHT_BRACE", "}", nil}, nil
 	case c == "*":
-		token = Token{posToken, "STAR", "*", nil}
+		return Token{posToken, "STAR", "*", nil}, nil
 	case c == ".":
-		token = Token{posToken, "DOT", ".", nil}
+		return Token{posToken, "DOT", ".", nil}, nil
 	case c == ",":
-		token = Token{posToken, "COMMA", ",", nil}
+		return Token{posToken, "COMMA", ",", nil}, nil
 	case c == ";":
-		token = Token{posToken, "SEMICOLON", ";", nil}
+		return Token{posToken, "SEMICOLON", ";", nil}, nil
 	case c == "+":
-		token = Token{posToken, "PLUS", "+", nil}
+		return Token{posToken, "PLUS", "+", nil}, nil
 	case c == "-":
-		token = Token{posToken, "MINUS", "-", nil}
+		return Token{posToken, "MINUS", "-", nil}, nil
 	default:
-		token = Token{posToken, "EOF", "", nil}
+		fmt.Fprintf(os.Stderr, "[line %d] Error: Unexpected character: %s\n", line, c)
+		return Token{}, errors.New("Error")
 	}
-	return token
 }
 
 func printToken(token Token) {
