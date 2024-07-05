@@ -68,6 +68,14 @@ func scanToken(input string) (Token, error) {
 	switch {
 	case c == "(":
 		return Token{posToken, "LEFT_PAREN", "(", nil}, nil
+	case c == "=":
+		token := Token{posToken, "EQUAL", "=", nil}
+		next := peek(input)
+		if next == "=" {
+			token = Token{posToken, "EQUAL_EQUAL", "==", nil}
+			posToken++
+		}
+		return token, nil
 	case c == ")":
 		return Token{posToken, "RIGHT_PAREN", ")", nil}, nil
 	case c == "{":
@@ -103,6 +111,13 @@ func printToken(token Token) {
 }
 
 func advance(input string) string {
-	posToken = posToken + 1
+	posToken++
 	return input[posToken : posToken+1]
+}
+
+func peek(input string) string {
+	if posToken+1 < len(input) {
+		return input[posToken+1 : posToken+2]
+	}
+	return ""
 }
