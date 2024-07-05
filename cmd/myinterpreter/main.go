@@ -84,6 +84,22 @@ func scanToken(input string) (Token, error) {
 			posToken++
 		}
 		return token, nil
+	case c == "<":
+		token := Token{posToken, "LESS", "<", nil}
+		next := peek(input)
+		if next == "=" {
+			token = Token{posToken, "LESS_EQUAL", "<=", nil}
+			posToken++
+		}
+		return token, nil
+	case c == ">":
+		token := Token{posToken, "GREATER", ">", nil}
+		next := peek(input)
+		if next == "=" {
+			token = Token{posToken, "GREATER_EQUAL", ">=", nil}
+			posToken++
+		}
+		return token, nil
 	case c == ")":
 		return Token{posToken, "RIGHT_PAREN", ")", nil}, nil
 	case c == "{":
