@@ -5,7 +5,18 @@ import (
 	"os"
 )
 
+type Token struct {
+	Pos   int
+	Type  string
+	Token string
+	Value *string
+}
+
+var posToken int
+var tokens []Token
+
 func main() {
+	posToken = -1
 
 	if len(os.Args) < 3 {
 		fmt.Fprintln(os.Stderr, "Usage: ./your_program.sh tokenize <filename>")
@@ -19,18 +30,49 @@ func main() {
 		os.Exit(1)
 	}
 
-	//Uncomment this block to pass the first stage
-	
 	filename := os.Args[2]
 	fileContents, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
 		os.Exit(1)
 	}
-	
-	if len(fileContents) > 0 {
-		panic("Scanner not implemented")
-	} else {
-		fmt.Println("EOF  null") // Placeholder, remove this line when implementing the scanner
+
+	for posToken < len(fileContents)-1 {
+		tokens = append(tokens, scanToken(string(fileContents)))
 	}
+	token := Token{posToken, "EOF", "", nil}
+	tokens = append(tokens, token)
+
+	for token := range tokens {
+		printToken(tokens[token])
+	}
+}
+
+func scanToken(input string) Token {
+	var token Token
+	c := advance(input)
+	switch {
+	case c == "(":
+		token = Token{posToken, "LEFT_PAREN", "(", nil}
+	case c == ")":
+		token = Token{posToken, "RIGHT_PAREN", ")", nil}
+	default:
+		token = Token{posToken, "EOF", "", nil}
+	}
+	return token
+}
+
+func printToken(token Token) {
+	fmt.Print(token.Type + " ")
+	fmt.Print(token.Token + " ")
+	if token.Value != nil {
+		fmt.Println(*token.Value)
+	} else {
+		fmt.Println("null")
+	}
+}
+
+func advance(input string) string {
+	posToken = posToken + 1
+	return input[posToken : posToken+1]
 }
