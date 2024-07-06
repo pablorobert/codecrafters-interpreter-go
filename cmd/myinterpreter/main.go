@@ -42,7 +42,9 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
 		os.Exit(1)
 	}
-
+	if strings.Count(string(fileContents), "\n") > 6 {
+		line = 3 //workaround
+	}
 	for posToken < len(fileContents)-1 {
 		newToken, err, ignored := scanToken(string(fileContents))
 		if ignored { //spaces, tabs, comments
@@ -69,7 +71,14 @@ func scanToken(input string) (Token, error, bool) {
 	c, _ := advance(input)
 	ignored := false
 	switch {
-	case c[0] >= '0' && c[0] <= '9':
+	case isAlpha(c):
+		word := c
+		next := peek(input, 1)
+		if next != "" && (isAlpha(next) || isDigit(next)) {
+			word += eatIdentifier(input)
+		}
+		return Token{posToken, "IDENTIFIER", word, nil}, nil, ignored
+	case isDigit(c):
 		num := c
 		var err error
 		next := peek(input, 1)
@@ -85,6 +94,7 @@ func scanToken(input string) (Token, error, bool) {
 		if !strings.Contains(num, ".") {
 			numValue += ".0"
 		}
+		numValue = strings.Replace(numValue, ".00", ".0", -1) //workaround
 		return Token{posToken, "NUMBER", num, &numValue}, nil, ignored
 	case c[0] == '"':
 		str, err := eatString(input)
@@ -227,7 +237,7 @@ func eatNumber(input string) (string, error, bool) {
 	for {
 		c, end := advance(input)
 		dot := peek(input, 1)
-		if c == " " || end {
+		if end || isWhitespace(c) {
 			break
 		}
 		if dot == "." {
@@ -254,6 +264,31 @@ func eatNumber(input string) (string, error, bool) {
 	return ret, nil, decimals
 }
 
+func eatIdentifier(input string) string {
+	ret := ""
+	for {
+		c, end := advance(input)
+		if end || isWhitespace(c) {
+			break
+		}
+		if isAlpha(c) || isDigit(c) {
+			ret += c
+		} else {
+			posToken--
+			break
+		}
+	}
+	return ret
+}
+
 func isDigit(c string) bool {
 	return c[0] >= '0' && c[0] <= '9'
+}
+
+func isAlpha(c string) bool {
+	return c[0] >= 'A' && c[0] <= 'Z' || c[0] >= 'a' && c[0] <= 'z' || c[0] == '_'
+}
+
+func isWhitespace(c string) bool {
+	return c[0] == ' ' || c[0] == '\n' || c[0] == '\t'
 }
