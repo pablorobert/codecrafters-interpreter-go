@@ -69,13 +69,30 @@ func scanToken(input string) (Token, error, bool) {
 	c, _ := advance(input)
 	ignored := false
 	switch {
+	case c[0] >= '0' && c[0] <= '9':
+		num := c
+		var err error
+		next := peek(input, 1)
+		if next != "" && isDigit(next) {
+			num, err, _ = eatNumber(input) //including '.'
+			if err != nil {
+				//fmt.Fprintf(os.Stderr, "[line %d] Error: number.", line)
+				return Token{}, errors.New("Error"), ignored
+			}
+			num = c + num
+		}
+		numValue := strings.Clone(num)
+		if !strings.Contains(num, ".") {
+			numValue += ".0"
+		}
+		return Token{posToken, "NUMBER", num, &numValue}, nil, ignored
 	case c[0] == '"':
 		str, err := eatString(input)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[line %d] Error: Unterminated string.", line)
 			return Token{}, errors.New("Error"), ignored
 		} else {
-			return Token{posToken, "STRING", fmt.Sprintf("\"%s\"", str), &str}, err, ignored
+			return Token{posToken, "STRING", fmt.Sprintf("\"%s\"", str), &str}, nil, ignored
 		}
 	case c[0] == '\n':
 		line++
@@ -86,7 +103,7 @@ func scanToken(input string) (Token, error, bool) {
 		return Token{}, nil, ignored
 	case c == "=":
 		token := Token{posToken, "EQUAL", "=", nil}
-		next := peek(input)
+		next := peek(input, 1)
 		if next == "=" {
 			token = Token{posToken, "EQUAL_EQUAL", "==", nil}
 			posToken++
@@ -94,7 +111,7 @@ func scanToken(input string) (Token, error, bool) {
 		return token, nil, ignored
 	case c == "!":
 		token := Token{posToken, "BANG", "!", nil}
-		next := peek(input)
+		next := peek(input, 1)
 		if next == "=" {
 			token = Token{posToken, "BANG_EQUAL", "!=", nil}
 			posToken++
@@ -102,7 +119,7 @@ func scanToken(input string) (Token, error, bool) {
 		return token, nil, ignored
 	case c == "<":
 		token := Token{posToken, "LESS", "<", nil}
-		next := peek(input)
+		next := peek(input, 1)
 		if next == "=" {
 			token = Token{posToken, "LESS_EQUAL", "<=", nil}
 			posToken++
@@ -110,7 +127,7 @@ func scanToken(input string) (Token, error, bool) {
 		return token, nil, ignored
 	case c == ">":
 		token := Token{posToken, "GREATER", ">", nil}
-		next := peek(input)
+		next := peek(input, 1)
 		if next == "=" {
 			token = Token{posToken, "GREATER_EQUAL", ">=", nil}
 			posToken++
@@ -118,7 +135,7 @@ func scanToken(input string) (Token, error, bool) {
 		return token, nil, ignored
 	case c == "/":
 		token := Token{posToken, "SLASH", "/", nil}
-		next := peek(input)
+		next := peek(input, 1)
 		if next == "/" {
 			eatCommentLine(input)
 			ignored = true
@@ -168,9 +185,9 @@ func advance(input string) (string, bool) {
 	return "", true
 }
 
-func peek(input string) string {
-	if posToken+1 < len(input) {
-		return input[posToken+1 : posToken+2]
+func peek(input string, pos int) string {
+	if posToken+pos < len(input) {
+		return input[posToken+pos : posToken+pos+1]
 	}
 	return ""
 }
@@ -202,4 +219,41 @@ func eatString(input string) (string, error) {
 		return "", errors.New("unterminated string")
 	}
 	return ret, nil
+}
+
+func eatNumber(input string) (string, error, bool) {
+	ret := ""
+	decimals := false
+	for {
+		c, end := advance(input)
+		dot := peek(input, 1)
+		if c == " " || end {
+			break
+		}
+		if dot == "." {
+			if decimals {
+				ret += c
+				return ret, nil, decimals
+			}
+			next := peek(input, 2)
+			if next != "" && isDigit(next) {
+				decimals = true
+				ret += c
+				posToken++
+				ret += dot
+				posToken++
+				ret += next
+			} else {
+				ret += c
+				break
+			}
+		} else if isDigit(c) {
+			ret += c
+		}
+	}
+	return ret, nil, decimals
+}
+
+func isDigit(c string) bool {
+	return c[0] >= '0' && c[0] <= '9'
 }
