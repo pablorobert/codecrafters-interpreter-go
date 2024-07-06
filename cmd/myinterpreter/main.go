@@ -43,8 +43,10 @@ func main() {
 	}
 
 	for posToken < len(fileContents)-1 {
-		newToken, err := scanToken(string(fileContents))
-		if err != nil {
+		newToken, err, comment := scanToken(string(fileContents))
+		if comment {
+			continue
+		} else if err != nil {
 			hasError = true
 		} else {
 			tokens = append(tokens, newToken)
@@ -62,12 +64,11 @@ func main() {
 	}
 }
 
-func scanToken(input string) (Token, error) {
+func scanToken(input string) (Token, error, bool) {
 	//var token Token
-	c := advance(input)
+	c, _ := advance(input)
+	comment := false
 	switch {
-	case c == "(":
-		return Token{posToken, "LEFT_PAREN", "(", nil}, nil
 	case c == "=":
 		token := Token{posToken, "EQUAL", "=", nil}
 		next := peek(input)
@@ -75,7 +76,7 @@ func scanToken(input string) (Token, error) {
 			token = Token{posToken, "EQUAL_EQUAL", "==", nil}
 			posToken++
 		}
-		return token, nil
+		return token, nil, comment
 	case c == "!":
 		token := Token{posToken, "BANG", "!", nil}
 		next := peek(input)
@@ -83,7 +84,7 @@ func scanToken(input string) (Token, error) {
 			token = Token{posToken, "BANG_EQUAL", "!=", nil}
 			posToken++
 		}
-		return token, nil
+		return token, nil, comment
 	case c == "<":
 		token := Token{posToken, "LESS", "<", nil}
 		next := peek(input)
@@ -91,7 +92,7 @@ func scanToken(input string) (Token, error) {
 			token = Token{posToken, "LESS_EQUAL", "<=", nil}
 			posToken++
 		}
-		return token, nil
+		return token, nil, comment
 	case c == ">":
 		token := Token{posToken, "GREATER", ">", nil}
 		next := peek(input)
@@ -99,28 +100,38 @@ func scanToken(input string) (Token, error) {
 			token = Token{posToken, "GREATER_EQUAL", ">=", nil}
 			posToken++
 		}
-		return token, nil
+		return token, nil, comment
+	case c == "/":
+		token := Token{posToken, "SLASH", "/", nil}
+		next := peek(input)
+		if next == "/" {
+			eatCommentLine(input)
+			comment = true
+		}
+		return token, nil, comment
+	case c == "(":
+		return Token{posToken, "LEFT_PAREN", "(", nil}, nil, comment
 	case c == ")":
-		return Token{posToken, "RIGHT_PAREN", ")", nil}, nil
+		return Token{posToken, "RIGHT_PAREN", ")", nil}, nil, comment
 	case c == "{":
-		return Token{posToken, "LEFT_BRACE", "{", nil}, nil
+		return Token{posToken, "LEFT_BRACE", "{", nil}, nil, comment
 	case c == "}":
-		return Token{posToken, "RIGHT_BRACE", "}", nil}, nil
+		return Token{posToken, "RIGHT_BRACE", "}", nil}, nil, comment
 	case c == "*":
-		return Token{posToken, "STAR", "*", nil}, nil
+		return Token{posToken, "STAR", "*", nil}, nil, comment
 	case c == ".":
-		return Token{posToken, "DOT", ".", nil}, nil
+		return Token{posToken, "DOT", ".", nil}, nil, comment
 	case c == ",":
-		return Token{posToken, "COMMA", ",", nil}, nil
+		return Token{posToken, "COMMA", ",", nil}, nil, comment
 	case c == ";":
-		return Token{posToken, "SEMICOLON", ";", nil}, nil
+		return Token{posToken, "SEMICOLON", ";", nil}, nil, comment
 	case c == "+":
-		return Token{posToken, "PLUS", "+", nil}, nil
+		return Token{posToken, "PLUS", "+", nil}, nil, comment
 	case c == "-":
-		return Token{posToken, "MINUS", "-", nil}, nil
+		return Token{posToken, "MINUS", "-", nil}, nil, comment
 	default:
 		fmt.Fprintf(os.Stderr, "[line %d] Error: Unexpected character: %s\n", line, c)
-		return Token{}, errors.New("Error")
+		return Token{}, errors.New("Error"), comment
 	}
 }
 
@@ -134,9 +145,12 @@ func printToken(token Token) {
 	}
 }
 
-func advance(input string) string {
+func advance(input string) (string, bool) {
 	posToken++
-	return input[posToken : posToken+1]
+	if posToken < len(input) {
+		return input[posToken : posToken+1], false
+	}
+	return "", true
 }
 
 func peek(input string) string {
@@ -144,4 +158,14 @@ func peek(input string) string {
 		return input[posToken+1 : posToken+2]
 	}
 	return ""
+}
+
+func eatCommentLine(input string) {
+	for {
+		c, end := advance(input)
+		if c == "\n" || end {
+			line++
+			break
+		}
+	}
 }
