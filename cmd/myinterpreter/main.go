@@ -69,6 +69,10 @@ func scanToken(input string) (Token, error, bool) {
 	c, _ := advance(input)
 	ignored := false
 	switch {
+	case c[0] == '\n':
+		line++
+		ignored = true
+		return Token{}, nil, ignored
 	case strings.TrimSpace(c) == "": //spaces, tab
 		ignored = true
 		return Token{}, nil, ignored
