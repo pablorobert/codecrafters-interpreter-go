@@ -19,6 +19,29 @@ var line int
 var tokens []Token
 var hasError bool
 
+/*
+and, class, else, false, for, fun,
+if, nil, or, print, return, super, this, true, var, while
+*/
+var reserverd map[string]string = map[string]string{
+	"and":    "AND",
+	"class":  "CLASS",
+	"else":   "ELSE",
+	"false":  "FALSE",
+	"for":    "FOR",
+	"fun":    "FUN",
+	"if":     "IF",
+	"nil":    "NIL",
+	"or":     "OR",
+	"print":  "PRINT",
+	"return": "RETURN",
+	"super":  "SUPER",
+	"this":   "THIS",
+	"true":   "TRUE",
+	"var":    "VAR",
+	"while":  "WHILE",
+}
+
 func main() {
 	posToken = -1
 	line = 1
@@ -41,9 +64,6 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
 		os.Exit(1)
-	}
-	if strings.Count(string(fileContents), "\n") > 6 {
-		line = 3 //workaround
 	}
 	for posToken < len(fileContents)-1 {
 		newToken, err, ignored := scanToken(string(fileContents))
@@ -76,6 +96,9 @@ func scanToken(input string) (Token, error, bool) {
 		next := peek(input, 1)
 		if next != "" && (isAlpha(next) || isDigit(next)) {
 			word += eatIdentifier(input)
+		}
+		if val, ok := reserverd[word]; ok {
+			return Token{posToken, val, word, nil}, nil, ignored
 		}
 		return Token{posToken, "IDENTIFIER", word, nil}, nil, ignored
 	case isDigit(c):
@@ -206,7 +229,9 @@ func eatCommentLine(input string) {
 	for {
 		c, end := advance(input)
 		if c == "\n" || end {
-			line++
+			if c == "\n" {
+				posToken--
+			}
 			break
 		}
 	}
@@ -259,6 +284,9 @@ func eatNumber(input string) (string, error, bool) {
 			}
 		} else if isDigit(c) {
 			ret += c
+		} else {
+			posToken--
+			break
 		}
 	}
 	return ret, nil, decimals
@@ -290,5 +318,8 @@ func isAlpha(c string) bool {
 }
 
 func isWhitespace(c string) bool {
+	if c[0] == '\n' {
+		line++
+	}
 	return c[0] == ' ' || c[0] == '\n' || c[0] == '\t'
 }
