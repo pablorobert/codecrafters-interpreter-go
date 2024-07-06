@@ -69,6 +69,14 @@ func scanToken(input string) (Token, error, bool) {
 	c, _ := advance(input)
 	ignored := false
 	switch {
+	case c[0] == '"':
+		str, err := eatString(input)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[line %d] Error: Unterminated string.", line)
+			return Token{}, errors.New("Error"), ignored
+		} else {
+			return Token{posToken, "STRING", fmt.Sprintf("\"%s\"", str), &str}, err, ignored
+		}
 	case c[0] == '\n':
 		line++
 		ignored = true
@@ -137,10 +145,7 @@ func scanToken(input string) (Token, error, bool) {
 	case c == "-":
 		return Token{posToken, "MINUS", "-", nil}, nil, ignored
 	default:
-		//fmt.Println("Passou aqui")
-		//if c[1] != '\t' {
 		fmt.Fprintf(os.Stderr, "[line %d] Error: Unexpected character: %s\n", line, c)
-		//}
 		return Token{}, errors.New("Error"), ignored
 	}
 }
@@ -178,4 +183,23 @@ func eatCommentLine(input string) {
 			break
 		}
 	}
+}
+
+func eatString(input string) (string, error) {
+	ret := ""
+	open := true
+	for {
+		c, end := advance(input)
+		if c == "\"" || end {
+			if c == "\"" {
+				open = false
+			}
+			break
+		}
+		ret += c
+	}
+	if open {
+		return "", errors.New("unterminated string")
+	}
+	return ret, nil
 }
