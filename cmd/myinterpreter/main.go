@@ -112,7 +112,12 @@ func scanToken(input string) (Token, error, bool) {
 		num := c
 		var err error
 		next := peek(input, 1)
-		if next != "" && isDigit(next) {
+		if next != "" && (isDigit(next) || next == ".") {
+			if next == "." {
+				num += next
+				posToken++
+				posToken++
+			}
 			num, err, _ = eatNumber(input) //including '.'
 			if err != nil {
 				//fmt.Fprintf(os.Stderr, "[line %d] Error: number.", line)
@@ -221,7 +226,11 @@ func printTokenValue(token Token) {
 	if token.Type == "EOF" {
 		return
 	}
-	fmt.Println(token.Token)
+	if token.Type == "NUMBER" {
+		fmt.Println(*token.Value)
+	} else {
+		fmt.Println(token.Token)
+	}
 }
 
 func advance(input string) (string, bool) {
