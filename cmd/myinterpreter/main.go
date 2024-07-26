@@ -228,6 +228,8 @@ func printTokenValue(token Token) {
 	}
 	if token.Type == "NUMBER" {
 		fmt.Println(*token.Value)
+	} else if token.Type == "STRING" {
+		fmt.Println(token.Token[1 : len(token.Token)-1])
 	} else {
 		fmt.Println(token.Token)
 	}
