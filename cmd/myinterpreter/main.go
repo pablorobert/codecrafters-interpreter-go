@@ -54,7 +54,7 @@ func main() {
 
 	command := os.Args[1]
 
-	if command != "tokenize" {
+	if command != "tokenize" && command != "parse" {
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
 	}
@@ -78,8 +78,15 @@ func main() {
 	token := Token{posToken, "EOF", "", nil}
 	tokens = append(tokens, token)
 
-	for token := range tokens {
-		printToken(tokens[token])
+	if command == "tokenize" {
+		for token := range tokens {
+			printToken(tokens[token])
+		}
+	}
+	if command == "parse" {
+		for token := range tokens {
+			printTokenValue(tokens[token])
+		}
 	}
 
 	if hasError {
@@ -208,6 +215,13 @@ func printToken(token Token) {
 	} else {
 		fmt.Println("null")
 	}
+}
+
+func printTokenValue(token Token) {
+	if token.Type == "EOF" {
+		return
+	}
+	fmt.Println(token.Token)
 }
 
 func advance(input string) (string, bool) {
